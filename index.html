@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.subunit{fill:#fff;}
+.subunit.Nordrhein-Westfalen{ fill: #aba; }
+.subunit.Baden-Württemberg{ fill: #bab; }
+.subunit.Hessen{ fill: #bcb; }
+.subunit.Niedersachsen{ fill: #cbc; }
+.subunit.Thüringen{ fill: #cdc; }
+.subunit.Hamburg{ fill: #dcd; }
+.subunit.Schleswig-Holstein{ fill: #ded; }
+.subunit.Rheinland-Pfalz{ fill: #ede; }
+.subunit.Saarland{ fill: #efe; }
+.subunit.Sachsen-Anhalt{ fill: #fef; }
+.subunit.Brandenburg{ fill: #aaa; }
+.subunit.Mecklenburg-Vorpommern{ fill: #bbb; }
+.subunit.Bayern { fill: #ccc; }
+.subunit.Sachsen { fill: #ddd; }
+.subunit.Bremen { fill: #eee; }
+.subunit.Berlin { fill: #fff; }
+
+.subunit-boundary {
+  fill: none;
+  stroke: #777;
+  stroke-dasharray: 2,2;
+  stroke-linejoin: round;
+}
+
+
+.place,
+.place-label {
+  fill: #444;
+  font-size:14px;
+}
+
+text {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 20px;
+  pointer-events: none;
+}
+
+
+</style>
+<body>
+<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 960,
+    height = 1160;
+
+var projection = d3.geo.mercator()
+    .center([10.5, 51.35])
+    .scale(3000)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+
+d3.json("de.json", function(error, de) {
+
+    //colouring the different subunits
+    svg.selectAll(".subunit")
+       .data(topojson.feature(de, de.objects.subunits).features)
+       .enter().append("path")
+       .attr("class", function(d) {
+        // console.log(d.properties.name);
+        return "subunit " + d.properties.name;
+       })
+       .attr("d", path);
+
+    //adding a border to the states
+    svg.append("path")
+        .datum(topojson.mesh(de, de.objects.subunits, function(a,b) {
+            if (a!==b ||
+                a.properties.name === "Berlin"||
+                a.properties.name === "Bremen"){
+                    var ret = a;
+                }
+                    return ret;
+                }))
+        .attr("d", path)
+        .attr("class", "subunit-boundary");
+
+    // add small black dots for populated places
+    svg.append("path")
+       .datum(topojson.feature(de, de.objects.places))
+       .attr("d", path)
+       .attr("class", "place");
+
+
+
+    //trying to display names of cities
+    svg.selectAll(".place-label")
+       .data(topojson.feature(de, de.objects.places).features)
+       .enter().append("text")
+       .attr("class", "place-label")
+       .attr("transform", function(d) {
+
+            //small test
+            //console.log( "translate(" + projection(d.geometry.coordinates) + ")" );
+
+            return "translate(" + projection(d.geometry.coordinates) + ")";
+        })
+       .attr("dy", ".35em")
+       .text(function(d) {
+            if (d.properties.name!=="Berlin" &&
+                d.properties.name!=="Bremen"){
+
+                    //for some reason this is undefined
+                    console.log(d.properties.name);
+                    return d.properties.name;
+            }
+        })
+       .attr("x", function(d) {
+            return d.geometry.coordinates[0] > -1 ? 6 : -6;
+        })
+       .style("text-anchor", function(d) {
+            return d.geometry.coordinates[0] > -1 ? "start" : "end";
+       });
+
+
+
+});
+
+</script>
+
+
+
+
+
